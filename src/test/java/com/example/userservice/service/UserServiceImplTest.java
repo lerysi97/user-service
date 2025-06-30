@@ -1,5 +1,6 @@
 package com.example.userservice.service;
 
+import com.example.common.event.UserEvent;
 import com.example.userservice.dto.UserRegistDto;
 import com.example.userservice.dto.UserVozvratDto;
 import com.example.userservice.entity.User;
@@ -13,6 +14,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +23,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
 public class UserServiceImplTest {
 
     @Mock
@@ -27,6 +31,9 @@ public class UserServiceImplTest {
 
     @InjectMocks
     private UserServiceImpl userService;
+
+    @Mock
+    private KafkaTemplate<String, UserEvent> kafkaTemplate;
 
     @Test
     void createUser() {
@@ -51,7 +58,7 @@ public class UserServiceImplTest {
         Mockito.when(userRepository.existsByEmail(userRegistDto.getEmail())).thenReturn(true);
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> userService.createUser(userRegistDto));
-        Assertions.assertEquals("Пользователь с таким email уже существует", exception.getMessage());
+        Assertions.assertEquals("Пользователь с таким email уже существует!", exception.getMessage());
     }
 
 

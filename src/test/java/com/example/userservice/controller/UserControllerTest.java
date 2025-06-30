@@ -10,6 +10,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.test.web.servlet.ResultActions;
@@ -23,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 
 @WebMvcTest(UserController.class)
+@ActiveProfiles("test")
 class UserControllerTest {
 
     @MockBean
@@ -40,7 +42,7 @@ class UserControllerTest {
         UserRegistDto userRegistDto = new UserRegistDto("Lera", "test@test.ru", 28);
         UserVozvratDto dto = DataFactoryTest.createSampleUserVozvratDto();
         Mockito.when(userService.createUser(userRegistDto)).thenReturn(dto);
-        postJson("/api/users", userRegistDto)
+        postJson("http://localhost:8081/api/users", userRegistDto)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Lera"))
                 .andExpect(jsonPath("$.email").value("test@test.ru"))
@@ -52,7 +54,7 @@ class UserControllerTest {
     void findUserById() throws Exception {
         UserVozvratDto dto = DataFactoryTest.createSampleUserVozvratDto();
         Mockito.when(userService.findUserById(1L)).thenReturn(dto);
-        mockMvc.perform(get("/api/users/1"))
+        mockMvc.perform(get("/api/users/{userId}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Lera"))
                 .andExpect(jsonPath("$.email").value("test@test.ru"))
@@ -66,7 +68,7 @@ class UserControllerTest {
         Mockito.when(userService.findUserById(1L))
                 .thenThrow(new IllegalArgumentException("Пользователь с таким id не существует"));
 
-        mockMvc.perform(get("/api/users/1"))
+        mockMvc.perform(get("/api/users/{userId}", 1L))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$").value("Пользователь с таким id не существует"));
     }
@@ -75,7 +77,7 @@ class UserControllerTest {
     void deleteUser() throws Exception {
         UserVozvratDto dto = DataFactoryTest.createSampleUserVozvratDto();
         Mockito.when(userService.deleteUser(1L)).thenReturn(dto);
-        mockMvc.perform(delete("/api/users/1"))
+        mockMvc.perform(delete("/api/users/{userId}",1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Lera"))
                 .andExpect(jsonPath("$.email").value("test@test.ru"))
@@ -89,7 +91,7 @@ class UserControllerTest {
         UserRegistDto userRegistDto = new UserRegistDto("Lera", "test@test.ru", 28);
         String json = objectMapper.writeValueAsString(userRegistDto);
         Mockito.when(userService.updateUser(1L, userRegistDto)).thenReturn(dto);
-        mockMvc.perform(put("/api/users/1").content(json).contentType(APPLICATION_JSON))
+        mockMvc.perform(put("/api/users/{userId}", 1L).content(json).contentType(APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Lera"))
                 .andExpect(jsonPath("$.email").value("test@test.ru"))
@@ -110,7 +112,7 @@ class UserControllerTest {
     }
 
     @Test
-    void createUser_withInvalidEmail_returns400() throws Exception {
+    void createUser_InvalidEmail() throws Exception {
         UserRegistDto invalidDto = new UserRegistDto("Lera", "не email", 25);
         postJson("/api/users", invalidDto)
                 .andExpect(status().isBadRequest());

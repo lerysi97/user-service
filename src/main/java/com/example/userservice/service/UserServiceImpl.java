@@ -1,5 +1,6 @@
 package com.example.userservice.service;
 
+import com.example.common.event.UserEvent;
 import com.example.userservice.dto.UserRegistDto;
 import com.example.userservice.dto.UserVozvratDto;
 import com.example.userservice.entity.User;
@@ -7,6 +8,7 @@ import com.example.userservice.mapper.UserMapper;
 import com.example.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,8 +17,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-
     private final UserRepository userRepository;
+    private final KafkaTemplate<String, UserEvent> kafkaTemplate;
 
     @Override
     public UserVozvratDto createUser(UserRegistDto userRegistDto) {
@@ -29,6 +31,9 @@ public class UserServiceImpl implements UserService {
 
         User user = UserMapper.mapToEntity(userRegistDto);
         User savedUser = userRepository.save(user);
+
+        log.info("Отправка создания в кафку: {}", user.getEmail());
+        kafkaTemplate.send("user-created", new UserEvent(user.getEmail(), "created"));
 
         log.info("Пользователь создан: {}", savedUser);
         return UserMapper.mapToDto(savedUser);
@@ -51,6 +56,9 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь с таким id не существует"));
+
+        log.info("Отправка удаления в кафку: {}", user.getEmail());
+        kafkaTemplate.send("user-deleted", new UserEvent(user.getEmail(), "deleted"));
 
         UserVozvratDto dto = UserMapper.mapToDto(user);
         userRepository.delete(user);

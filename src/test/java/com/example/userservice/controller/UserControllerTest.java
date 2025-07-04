@@ -105,10 +105,10 @@ class UserControllerTest {
         Mockito.when(userService.getAllUsers()).thenReturn(List.of(dto));
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Lera"))
-                .andExpect(jsonPath("$[0].email").value("test@test.ru"))
-                .andExpect(jsonPath("$[0].age").value(28));
-        System.out.println(objectMapper.writeValueAsString(dto));
+                .andExpect(jsonPath("$._embedded.userVozvratDtoList[0].name").value("Lera"))
+                .andExpect(jsonPath("$._embedded.userVozvratDtoList[0].email").value("test@test.ru"))
+                .andExpect(jsonPath("$._embedded.userVozvratDtoList[0].age").value(28))
+                .andExpect(jsonPath("$._links.self.href").exists());
     }
 
     @Test

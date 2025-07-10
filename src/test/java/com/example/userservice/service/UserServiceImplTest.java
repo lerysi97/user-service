@@ -14,16 +14,24 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class UserServiceImplTest {
 
     @Mock
@@ -33,12 +41,23 @@ public class UserServiceImplTest {
     private UserServiceImpl userService;
 
     @Mock
+    private CircuitBreakerFactory<?, ?> circuitBreakerFactory;
+
+    @Mock
     private KafkaTemplate<String, UserEvent> kafkaTemplate;
+
+    private void setupCircuitBreakerMocks() {
+        CircuitBreaker mockCircuitBreaker = Mockito.mock(CircuitBreaker.class);
+        when(circuitBreakerFactory.create(anyString())).thenReturn(mockCircuitBreaker);
+        when(mockCircuitBreaker.run(any(), any())).thenReturn(null);
+    }
 
     @Test
     void createUser() {
         UserRegistDto userRegistDto = new UserRegistDto("Lera", "test@test.ru", 28);
         User fackUser = DataFactoryTest.createSampleUser();
+
+        setupCircuitBreakerMocks();
 
         Mockito.when(userRepository.existsByEmail(userRegistDto.getEmail())).thenReturn(false);
         Mockito.when(userRepository.save(Mockito.any())).thenReturn(fackUser);
@@ -49,6 +68,7 @@ public class UserServiceImplTest {
         Assertions.assertEquals(userRegistDto.getEmail(), result.getEmail());
 
         Mockito.verify(userRepository).save(Mockito.any());
+        Mockito.verify(circuitBreakerFactory).create("notification-service");
     }
 
     @Test
@@ -91,12 +111,15 @@ public class UserServiceImplTest {
 
         Mockito.when(userRepository.findById(fackUser.getId())).thenReturn(Optional.of(fackUser));
 
+        setupCircuitBreakerMocks();
+
         UserVozvratDto result = userService.deleteUser(fackUser.getId());
 
         Assertions.assertEquals(fackUser.getId(), result.getId());
         Assertions.assertEquals(fackUser.getEmail(), result.getEmail());
 
         Mockito.verify(userRepository).delete(fackUser);
+        Mockito.verify(circuitBreakerFactory).create("notification-service");
     }
 
     @Test

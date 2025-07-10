@@ -8,6 +8,7 @@ import com.example.userservice.mapper.UserMapper;
 import com.example.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final KafkaTemplate<String, UserEvent> kafkaTemplate;
+    private final CircuitBreakerFactory<?, ?> circuitBreakerFactory;
 
     @Override
     public UserVozvratDto createUser(UserRegistDto userRegistDto) {
@@ -33,7 +35,15 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepository.save(user);
 
         log.info("Отправка создания в кафку: {}", user.getEmail());
-        kafkaTemplate.send("user-created", new UserEvent(user.getEmail(), "created"));
+        circuitBreakerFactory.create("notification-service").run(
+                () -> {
+                    kafkaTemplate.send("user-created", new UserEvent(user.getEmail(), "created"));
+                    return null;
+                },
+                throwable -> {
+                    log.error("Ошибка при отправке в Kafka created: {}", throwable.getMessage());
+                    return null;
+                });
 
         log.info("Пользователь создан: {}", savedUser);
         return UserMapper.mapToDto(savedUser);
@@ -58,7 +68,15 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь с таким id не существует"));
 
         log.info("Отправка удаления в кафку: {}", user.getEmail());
-        kafkaTemplate.send("user-deleted", new UserEvent(user.getEmail(), "deleted"));
+        circuitBreakerFactory.create("notification-service").run(
+                () -> {
+                    kafkaTemplate.send("user-deleted", new UserEvent(user.getEmail(), "deleted"));
+                    return null;
+                },
+                throwable -> {
+                    log.error("Ошибка при отправке в Kafka deleted: {}", throwable.getMessage());
+                    return null;
+                });
 
         UserVozvratDto dto = UserMapper.mapToDto(user);
         userRepository.delete(user);

@@ -1,0 +1,28 @@
+spring:
+  config:
+    import: optional:configserver:http://config-server:8888
+  cloud:
+    config:
+      enabled: true
+      uri: http://config-server:8888
+      fail-fast: true
+      import-check:
+        enabled: false
+  application:
+    name: user-service
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://discovery-service:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

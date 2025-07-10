@@ -4,7 +4,7 @@ import com.example.userservice.dto.UserRegistDto;
 import com.example.userservice.dto.UserVozvratDto;
 import com.example.userservice.service.UserService;
 import com.example.userservice.util.DataFactoryTest;
-import org.jetbrains.annotations.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;

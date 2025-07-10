@@ -1,2 +1,8 @@
-- [Common-events](https://github.com/lerysi97/common-events.git) – общий модуль.
-- [Notification-service](https://github.com/lerysi97/notification-service.git) – сервис уведомлений.
+- [user-service](https://github.com/lerysi97/user-service) - сервис пользователей
+- [notification-service](https://github.com/lerysi97/notification-service) - сервис уведомлений
+- [common-events](https://github.com/lerysi97/common-events) - общий модуль
+- [config-server](https://github.com/lerysi97/config-server) - централизованные конфиги
+- [discovery-service](https://github.com/lerysi97/discovery-service) - Eureka Server
+- [api-gateway](https://github.com/lerysi97/api-gateway) - Spring Cloud Gateway
+- [configs](https://github.com/lerysi97/configs) - YAML-файлы (`C:\tmp\configs\`)
+- [docker](https://github.com/lerysi97/docker) - общий docker-compose  
